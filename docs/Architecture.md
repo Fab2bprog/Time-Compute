@@ -343,6 +343,7 @@ graph TD
     core -.->|"feature = defmt"| defmt["defmt"]
 
     devonly["dev-dependency, tests only<br/>(#[cfg(test)] mod tests)"] -.-> serdejson["serde_json"]
+    devonly -.-> serdederive["serde (+ derive feature)"]
 ```
 
 Solid arrows are unconditional dependencies (compiled in even with no
@@ -358,10 +359,13 @@ Gregorian calendar core, `NaiveDate`/`NaiveTime`/`NaiveDateTime`, `Utc`,
 calendars, the Thai/Buddhist calendar, and Matariki — has zero dependencies,
 external or otherwise.
 
-`serde_json` appears only as a `dev-dependency`, used exclusively by this
-crate's own `#[cfg(test)] mod tests` blocks (the `serde_round_trip`-style
-tests gated behind the `serde` feature) to check that a value survives a
-JSON round trip. See `docs/About_dependencies.md` for the full,
+`serde_json` and `serde`'s own `derive` feature appear only as
+`dev-dependencies`, used exclusively by this crate's own
+`#[cfg(test)] mod tests` blocks (tests gated behind the `serde` feature)
+to check that a value survives a JSON round trip -- including, for two
+of those tests, a small test-only struct that derives `Serialize`/
+`Deserialize` to exercise the public `ts_seconds` helper module. See
+`docs/About_dependencies.md` for the full,
 per-dependency breakdown, and `docs/About_testing.md` for the testing
 methodology.
 

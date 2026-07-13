@@ -86,8 +86,21 @@ astro = "2.0.0"
 [dev-dependencies]
 # Dev-only: never shipped to consumers of the published crate, so this is
 # not an exception to the zero-dependency mandate for the library itself.
-# Used exclusively by this crate's own `#[cfg(test)] mod tests` blocks
-# (the `serde_round_trip`-style tests gated behind the `serde` feature) to
-# check that a value survives a JSON round trip; `time_compute` itself
-# never depends on `serde_json`.
+# Used exclusively by this crate's own `#[cfg(test)] mod tests` blocks,
+# gated behind the `serde` feature, to check that a value survives a JSON
+# round trip; `time_compute` itself never depends on `serde_json`.
 serde_json = "1"
+# The crate's own optional `serde` dependency above is declared with
+# `default-features = false`, so it does not pull in the `derive` feature
+# (the `#[derive(Serialize)]`/`#[derive(Deserialize)]` macros) -- the
+# crate's public API never needs them, since every `serde` impl on a
+# public type is written by hand (a plain string/timestamp encoding), not
+# derived. Two permanent unit tests (`ts_seconds_serde_helper_round_trips*`
+# in `src/datetime.rs` and `src/naive/datetime.rs`) do derive
+# `Serialize`/`Deserialize` on a small test-only `Wrapper` struct, purely
+# to exercise the public `ts_seconds` helper module end-to-end -- so the
+# `derive` feature is enabled here, in `[dev-dependencies]` only. Thanks to
+# Cargo's feature resolver (edition 2021), this feature addition applies
+# only when testing this crate itself, never when it is used as a
+# dependency by another project.
+serde = { version = "1", features = ["derive"] }

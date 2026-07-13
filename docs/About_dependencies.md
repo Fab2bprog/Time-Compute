@@ -57,9 +57,9 @@ None of these are compiled in unless the consumer of the crate explicitly turns 
 
 Each of these five is a one-line `Cargo.toml` addition on the consumer's side, and adding none of them at all is the default -- a plain `cargo add time_compute` (or the equivalent `Cargo.toml` entry with no `features = [...]`) pulls in only the two unconditional dependencies above.
 
-## `serde_json` -- test-only, not part of the published crate
+## `serde_json` and `serde`'s `derive` feature -- test-only, not part of the published crate
 
-One more dependency appears in `Cargo.toml`, but only under `[dev-dependencies]`: `serde_json`. It is used exclusively inside this crate's own `#[cfg(test)] mod tests` blocks (the `serde_round_trip`-style tests gated behind the `serde` feature) to check that a value survives a JSON round trip. Because it is a dev-dependency, Cargo never compiles it into the published library or pulls it into a consumer's build. `time_compute` has no dependency, direct or transitive, on `chrono` in any configuration -- `chrono` is not part of this crate.
+Two more dependencies appear in `Cargo.toml`, but only under `[dev-dependencies]`: `serde_json`, and the crate's own optional `serde` dependency with its `derive` feature additionally turned on. Both are used exclusively inside this crate's own `#[cfg(test)] mod tests` blocks, gated behind the `serde` feature: `serde_json` checks that a value survives a JSON round trip, and two of those tests (`ts_seconds_serde_helper_round_trips*`, in `src/datetime.rs` and `src/naive/datetime.rs`) additionally derive `Serialize`/`Deserialize` on a small test-only struct to exercise the public `ts_seconds` helper module end-to-end. The crate's own public API never needs the `derive` feature -- every `serde` implementation on a public type (`NaiveDate`, `NaiveTime`, `DateTime<Tz>`, ...) is written by hand as a plain string/timestamp encoding, not derived -- which is why `derive` is enabled only in `[dev-dependencies]`, never in the main `[dependencies]` entry. Because both are dev-dependencies, Cargo never compiles either into the published library or pulls them into a consumer's build. `time_compute` has no dependency, direct or transitive, on `chrono` in any configuration -- `chrono` is not part of this crate.
 
 ## Summary table
 
@@ -74,5 +74,6 @@ One more dependency appears in `Cargo.toml`, but only under `[dev-dependencies]`
 | `arbitrary` | Only with feature `arbitrary` | `Arbitrary` impls only | Fuzz-testing input generation |
 | `defmt` | Only with feature `defmt` | `defmt::Format` impls only | Embedded/no_std-friendly debug output |
 | `serde_json` | Dev-only, never shipped | `#[cfg(test)]` blocks only | JSON round-trip test assertions |
+| `serde` (`derive` feature) | Dev-only, never shipped | Two `#[cfg(test)]` blocks only | Derives `Serialize`/`Deserialize` on a test-only struct |
 
 Everything not in this table -- which is to say, the great majority of the crate -- has no dependency at all.
