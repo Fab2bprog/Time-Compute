@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test (features: ${{ matrix.features || 'default' }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # rkyv / rkyv-16 / rkyv-32 / rkyv-64 are mutually exclusive (see
+        # Cargo.toml), so each is tested in its own job rather than combined
+        # with the others. Every other optional feature is safe to combine.
+        features:
+          - ""
+          - "serde,unstable-locales,arbitrary,defmt"
+          - "rkyv"
+          - "rkyv,rkyv-validation"
+          - "rkyv-16"
+          - "rkyv-32"
+          - "rkyv-64"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build
+        run: cargo build --verbose ${{ matrix.features && format('--features={0}', matrix.features) || '' }}
+      - name: Test
+        run: cargo test --verbose ${{ matrix.features && format('--features={0}', matrix.features) || '' }}
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - name: Clippy (default features)
+        run: cargo clippy --all-targets -- -D warnings
+      - name: Clippy (all non-exclusive features)
+        run: cargo clippy --all-targets --features serde,unstable-locales,arbitrary,defmt -- -D warnings
+
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all -- --check

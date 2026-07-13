@@ -1,0 +1,94 @@
+[package]
+name = "time_compute"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Dependency-free date/time computation library, with an API closely mirroring chrono"
+# TODO: replace with the real GitHub URL once the repository is created.
+repository = "https://github.com/REPLACE_ME/time_compute"
+readme = "README.md"
+keywords = ["date", "time", "calendar", "chrono"]
+categories = ["date-and-time"]
+
+# Ensures docs.rs builds documentation for the optional features (mirroring
+# chrono's own choice here). `rkyv-16`/`rkyv-32`/`rkyv-64` are mutually
+# exclusive (see the `rkyv` feature below), so only one (`rkyv`, which maps
+# to `rkyv/size_32`) is listed -- listing more than one here would fail the
+# docs.rs build the same way `cargo clippy --all-features` does.
+[package.metadata.docs.rs]
+features = ["serde", "unstable-locales", "arbitrary", "defmt", "rkyv", "rkyv-validation"]
+
+[features]
+# Optional (de)serialization support, mirroring chrono's own feature set.
+# Disabled by default, matching chrono's default feature set (neither is
+# in chrono's `default = [...]` list either).
+serde = ["dep:serde"]
+# Note that rkyv-16, rkyv-32, and rkyv-64 are mutually exclusive, exactly
+# like in chrono.
+rkyv = ["dep:rkyv", "rkyv/size_32"]
+rkyv-16 = ["dep:rkyv", "rkyv?/size_16"]
+rkyv-32 = ["dep:rkyv", "rkyv?/size_32"]
+rkyv-64 = ["dep:rkyv", "rkyv?/size_64"]
+rkyv-validation = ["rkyv?/validation"]
+# Locale-aware formatting/parsing (month/weekday names in other languages
+# than English, locale-specific `%x`/`%X`/`%c`/`%r` formats). Named
+# `unstable-locales` for parity with chrono, and for the same reason
+# chrono uses that name: the output can shift with a `pure-rust-locales`
+# version bump (it corrects locale data over time), so this is not given
+# the same stability guarantee as the rest of the crate's API, even
+# though our own integration code is new and has seen less real-world use
+# than chrono's.
+unstable-locales = ["dep:pure-rust-locales"]
+# `arbitrary::Arbitrary` support (for fuzzing), matching chrono's own
+# optional `arbitrary` feature 1:1 (explicitly authorized by Fabrice,
+# 2026-07-13, same rationale as serde/rkyv/pure-rust-locales).
+arbitrary = ["dep:arbitrary"]
+# `defmt::Format` support (compact `Debug`-like output for embedded/
+# no_std targets), matching chrono's own optional `defmt` feature 1:1
+# (explicitly authorized by Fabrice, 2026-07-13, same rationale as
+# serde/rkyv/pure-rust-locales). Also turns on `pure-rust-locales`'s own
+# `defmt` feature (needed for `Locale: defmt::Format` when `defmt` and
+# `unstable-locales` are both enabled), exactly like chrono does.
+defmt = ["dep:defmt", "pure-rust-locales?/defmt"]
+
+[dependencies]
+# The core of this crate (calendar math, durations, naive date/time types,
+# `Utc`, `FixedOffset`) has no dependency. Six exceptions are allowed:
+# - `tzdb`/`tz-rs`: read the IANA time zone database and detect the
+#   system's local time zone, for the `Local` time zone type.
+# - `serde`/`rkyv`: optional (de)serialization support, matching chrono's
+#   own optional `serde`/`rkyv` features 1:1 (explicitly authorized by
+#   Fabrice as an exception to the zero-dependency mandate, 2026-07-13).
+# - `pure-rust-locales`: locale data (month/weekday names, date/time
+#   formats) for the optional `unstable-locales` feature (explicitly
+#   authorized by Fabrice, 2026-07-13, same rationale as serde/rkyv).
+# - `arbitrary`/`defmt`: optional fuzzing / embedded-logging support,
+#   matching chrono's own optional `arbitrary`/`defmt` features 1:1
+#   (explicitly authorized by Fabrice, 2026-07-13, same rationale as
+#   serde/rkyv/pure-rust-locales).
+# - `astro`: real astronomical computation (Meeus' algorithms / VSOP87),
+#   used only for the Japanese solar-term functions
+#   (`shunbun_no_hi`/`shuubun_no_hi`/`setsubun` in `naive/date.rs`).
+#   Unlike every exception above, this is the crate's first delegation of
+#   actual *computation* (not static data) to an external library, and
+#   those three functions are the only non-`const fn`, floating-point
+#   functions in the whole crate. A deliberate exception explicitly
+#   requested by Fabrice, overriding this project's own recommendation to
+#   stay dependency-free (2026-07-13).
+tzdb = "0.7"
+tz-rs = "0.7"
+serde = { version = "1", default-features = false, optional = true }
+rkyv = { version = "0.7", default-features = false, optional = true }
+pure-rust-locales = { version = "0.8", optional = true }
+arbitrary = { version = "1", features = ["derive"], optional = true }
+defmt = { version = "1", optional = true }
+astro = "2.0.0"
+
+[dev-dependencies]
+# Dev-only: never shipped to consumers of the published crate, so this is
+# not an exception to the zero-dependency mandate for the library itself.
+# Used exclusively by this crate's own `#[cfg(test)] mod tests` blocks
+# (the `serde_round_trip`-style tests gated behind the `serde` feature) to
+# check that a value survives a JSON round trip; `time_compute` itself
+# never depends on `serde_json`.
+serde_json = "1"
