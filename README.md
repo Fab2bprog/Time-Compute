@@ -8,14 +8,14 @@ If your project already uses `chrono`, migrating is normally a matter of changin
 
 ```toml
 [dependencies]
-time_compute = "0.1"
+time_compute = "1.0"
 ```
 
 Or, with an optional feature enabled (see `docs/About_dependencies.md` for what each one does):
 
 ```toml
 [dependencies]
-time_compute = { version = "0.1", features = ["serde"] }
+time_compute = { version = "1.0", features = ["serde"] }
 ```
 
 ## Quick start

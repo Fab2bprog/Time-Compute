@@ -1,6 +1,6 @@
 [package]
 name = "time_compute"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 license = "MIT"
 description = "Dependency-free date/time computation library, with an API closely mirroring chrono"
