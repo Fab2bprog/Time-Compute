@@ -1,4 +1,4 @@
-# time_compute
+# Time-Compute
 
 `time_compute` is a from-scratch, near-zero-dependency Rust date/time library with a public API that mirrors [`chrono`](https://github.com/chronotope/chrono) one-to-one. It exists to answer a simple question: could the same well-defined, mathematically settled problem -- calendar arithmetic -- be rebuilt on a leaner, more precisely scoped, more transparently maintainable foundation, without breaking a single line of code that already depends on `chrono`?
 
