@@ -4,8 +4,7 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 description = "Dependency-free date/time computation library, with an API closely mirroring chrono"
-# TODO: replace with the real GitHub URL once the repository is created.
-repository = "https://github.com/REPLACE_ME/time_compute"
+repository = "https://github.com/Fab2bprog/Time-Compute"
 readme = "README.md"
 keywords = ["date", "time", "calendar", "chrono"]
 categories = ["date-and-time"]
