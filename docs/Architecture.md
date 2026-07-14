@@ -64,7 +64,8 @@ Time-Compute/
 │   ├── About_dependencies.md  Why each dependency exists, and its exact scope
 │   ├── About_testing.md       Testing methodology and unit-test breakdown
 │   ├── Use_Example.md         Runnable usage examples, core + extensions
-│   └── About_time_compute.md  Project philosophy: why the crate exists
+│   ├── About_time_compute.md  Project philosophy: why the crate exists
+│   └── why_not_chrono.md      The case for time_compute over chrono
 └── src/
     ├── lib.rs                 Crate root: module tree, public re-exports
     ├── calendar.rs            (private) Gregorian civil-date <-> day-count math

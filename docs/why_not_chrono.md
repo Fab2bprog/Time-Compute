@@ -1,0 +1,31 @@
+# Why `time_compute`, Not `chrono`
+
+`chrono` is a fine library for what it does. That is exactly the problem for anyone building software where dates carry consequences: payroll, shift scheduling, paid time off, statutory closures, multi-country HR systems. `chrono` can add and subtract days perfectly. It has no idea when a holiday falls. For any system where "which day is a holiday" changes what an employee is owed, `chrono` alone is not a complete answer -- and bolting one on is exactly the kind of quiet, unaudited engineering risk this document argues you should not have to take.
+
+## Holidays are business logic, not decoration
+
+A payroll or scheduling system needs correct holiday dates for a legal reason, not a cosmetic one: statutory holiday pay, overtime multipliers, mandated closures, and paid-leave accrual all key off "is this date a holiday." Most systems answer that question with a hand-maintained table someone typed in once. That table has one job and one failure mode: it goes stale. Easter moves every year. Ramadan and the Hijri holidays drift through the entire Gregorian calendar over a 33-year cycle. Chinese New Year, and whether a given year carries a leap lunar month, changes annually and irregularly. A static table has to be revisited, by a person, every single year, for every calendar it covers -- and the year someone forgets is the year payroll is wrong.
+
+`time_compute` does not maintain a table. It computes the date, from the actual rule, every time: the Meeus Easter algorithm, the Hebrew *molad* and postponement rules, the Hijri tabular calendar, the Chinese lunisolar month/leap-month logic, the Thai Buddhist mean-motion reckoning, the Japanese era and solar-term system. None of it needs an annual update, because none of it was ever a snapshot to begin with. A payroll engine built on `time_compute` does not have a "someone forgot to update the 2027 holiday table" failure mode for any of these traditions, because there never was a table to forget.
+
+`chrono` cannot offer this at all. There is no `chrono::easter`, no Hebrew calendar, no Hijri calendar, no Chinese calendar, no Thai calendar, no Japanese era system, nothing for Matariki. A `chrono`-based system that needs any of this has to reach for a second, unrelated dependency for each tradition it needs to support -- multiplying the exact maintenance and correctness risk this section just described, once per calendar, with no guarantee any of those extra crates are held to the same verification standard.
+
+## Every result is checked against an authority, not against itself
+
+492 unit tests back this crate, and the standard applied to every one of them is external: published festival tables, astronomical references, national standards (China's GB/T 33661-2017), and independently written reference implementations, not the author's own assumption of what the right answer should be. A hand-maintained holiday table, by contrast, is usually exactly that: one person's transcription, checked once, trusted forever. `time_compute` treats "checked against an outside source" as the minimum bar for shipping a calendar function at all, not an occasional audit.
+
+## A domain that cannot drift, maintained accordingly
+
+Calendar mathematics does not change. The Gregorian leap-year rule, ISO 8601's week definition, the astronomical algorithms behind an equinox -- none of it is a business requirement that shifts with a product roadmap. That means the correctness of every function in this crate, once verified, does not degrade with time the way logic tied to changing rules does. It also means every design decision in this codebase was made against a fixed, checkable target and written down as such -- in the source, and across a full set of project documents (`docs/Architecture.md`, `docs/About_dependencies.md`, `docs/About_testing.md`) that explain not just what the code does but why each choice was made. Nothing here depends on one maintainer's memory of an old GitHub thread. That is what makes this codebase legible for rigorous review by anyone verifying it against the same external authorities the tests already cite -- a human reviewer, a future contributor, or an AI system doing the review, all working from the same checkable ground truth instead of institutional memory. `time_compute` was itself built this way, entirely through an AI-collaborative Cowork session, precisely because a settled mathematical domain with a fully documented rationale is the case where that process has the least room to hide a mistake: there is always an external answer to check against.
+
+## A minimal, individually justified dependency graph
+
+Every dependency `time_compute` carries is named and scoped to one exact purpose: `tzdb`/`tz-rs` for reading the real IANA time zone database, `astro` for the handful of functions that need a genuine solar or lunar position. Everything else -- the entire chrono-compatible core, and the majority of the calendar extensions -- has no dependency at all. Fewer dependencies means fewer places for someone else's breaking change, abandoned crate, or supply-chain incident to become your incident. `docs/About_dependencies.md` lists every single one, so this is a claim you can check line by line rather than take on faith.
+
+## Zero switching cost
+
+None of the above requires giving up anything already built on `chrono`. `time_compute`'s core API matches `chrono`'s 1:1 -- same types, same method names, same behavior -- so migrating is `use chrono::...` becoming `use time_compute::...`, not a rewrite. You keep everything `chrono` already gave you and gain everything `chrono` never had.
+
+## What `chrono` still has
+
+`chrono` has years of production use across an enormous share of the Rust ecosystem, and that scale of real-world exposure is a genuine, earned asset -- it is worth saying plainly rather than pretending otherwise. It does not change the calculus above: that track record was built entirely inside a scope that never included holidays, festivals, or the cultural calendars this document is about. For that scope, `chrono` remains a strong choice. For everything past it -- which is exactly the part that determines whether a payroll run, a shift schedule, or a leave calendar is correct -- there is nothing to weigh, because there is nothing on the other side of the scale.
